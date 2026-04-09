@@ -17,7 +17,7 @@ const PLATFORM_META = {
     icon: '📸',
     color: '#e1306c',
     bg: 'rgba(225,48,108,0.1)',
-    description: 'Post Reels and videos to your Instagram followers.',
+    description: 'Post Reels to Instagram. Requires a Creator or Business account (free to switch in the Instagram app).',
     available: true,
   },
   twitter: {
