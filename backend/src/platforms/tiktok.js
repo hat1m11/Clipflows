@@ -176,11 +176,16 @@ async function exchangeCodeForTokens(code, redirectUri, codeVerifier) {
  * Get TikTok user profile
  */
 async function getUserProfile(accessToken) {
-  const response = await axios.get(`${TIKTOK_API_BASE}/user/info/`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    params: { fields: 'open_id,union_id,avatar_url,display_name' },
-  });
-  return response.data.data.user;
+  try {
+    const response = await axios.get(`${TIKTOK_API_BASE}/user/info/`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params: { fields: 'open_id,union_id,avatar_url,display_name' },
+    });
+    return response.data.data.user;
+  } catch (err) {
+    console.warn('Could not fetch TikTok profile, using fallback:', err.message);
+    return { open_id: 'unknown', display_name: '@tiktok_user' };
+  }
 }
 
 module.exports = { post, exchangeCodeForTokens, getUserProfile, getValidToken };
