@@ -114,6 +114,53 @@ router.post('/tiktok/callback', async (req, res) => {
   res.json({ success: true, platform: 'tiktok', username: profile.display_name });
 });
 
+// GET /accounts/instagram/oauth-url
+router.get('/instagram/oauth-url', async (req, res) => {
+  if (!process.env.INSTAGRAM_APP_ID) {
+    return res.json({ url: null, mock: true, message: 'Instagram not configured.' });
+  }
+  const redirectUri = `${process.env.FRONTEND_URL}/oauth/instagram/callback`;
+  const state = Buffer.from(JSON.stringify({ userId: req.user.id })).toString('base64');
+  const scopes = [
+    'instagram_basic',
+    'instagram_content_publish',
+    'pages_show_list',
+    'pages_read_engagement',
+  ].join(',');
+  const url = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${process.env.INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&response_type=code&state=${state}`;
+  res.json({ url });
+});
+
+// POST /accounts/instagram/callback
+router.post('/instagram/callback', async (req, res) => {
+  const { code, state } = req.body;
+  try {
+    JSON.parse(Buffer.from(state, 'base64').toString());
+  } catch {
+    return res.status(400).json({ error: 'Invalid state parameter' });
+  }
+
+  const instagram = getPlatform('instagram');
+  const redirectUri = `${process.env.FRONTEND_URL}/oauth/instagram/callback`;
+  const tokenData = await instagram.exchangeCodeForTokens(code, redirectUri);
+  const profile = await instagram.getUserProfile(tokenData.access_token);
+
+  const expiresAt = new Date(Date.now() + (tokenData.expires_in || 60 * 24 * 60 * 60) * 1000);
+
+  await query(
+    `INSERT INTO social_accounts (user_id, platform, platform_user_id, platform_username, access_token, expires_at)
+     VALUES ($1, 'instagram', $2, $3, $4, $5)
+     ON CONFLICT (user_id, platform) DO UPDATE SET
+       platform_user_id = EXCLUDED.platform_user_id,
+       platform_username = EXCLUDED.platform_username,
+       access_token = EXCLUDED.access_token,
+       expires_at = EXCLUDED.expires_at`,
+    [req.user.id, profile.ig_user_id, profile.username, tokenData.access_token, expiresAt]
+  );
+
+  res.json({ success: true, platform: 'instagram', username: profile.username });
+});
+
 // DELETE /accounts/:platform - disconnect account
 router.delete('/:platform', async (req, res) => {
   const { platform } = req.params;

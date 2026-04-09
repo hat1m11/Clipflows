@@ -44,6 +44,9 @@ export const getTikTokOAuthUrl = () =>
 export const connectTikTokMock = () =>
   api.post('/accounts/tiktok/callback', { code: 'mock' }).then((r) => r.data);
 
+export const getInstagramOAuthUrl = () =>
+  api.get('/accounts/instagram/oauth-url').then((r) => r.data);
+
 export const disconnectAccount = (platform) =>
   api.delete(`/accounts/${platform}`).then((r) => r.data);
 

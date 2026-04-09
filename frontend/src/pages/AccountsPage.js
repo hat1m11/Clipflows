@@ -1,7 +1,7 @@
 // frontend/src/pages/AccountsPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { getAccounts, getTikTokOAuthUrl, connectTikTokMock, disconnectAccount } from '../services/api';
+import { getAccounts, getTikTokOAuthUrl, connectTikTokMock, getInstagramOAuthUrl, disconnectAccount } from '../services/api';
 
 const PLATFORM_META = {
   tiktok: {
@@ -18,7 +18,7 @@ const PLATFORM_META = {
     color: '#e1306c',
     bg: 'rgba(225,48,108,0.1)',
     description: 'Post Reels and videos to your Instagram followers.',
-    available: false,
+    available: true,
   },
   twitter: {
     name: 'X / Twitter',
@@ -63,18 +63,25 @@ export default function AccountsPage() {
   }, []);
 
   const handleConnect = async (platform) => {
-    if (platform !== 'tiktok') return;
     setConnecting(platform);
     setMessage('');
-
     try {
-      const { url, mock } = await getTikTokOAuthUrl();
-      if (mock) {
-        const result = await connectTikTokMock();
-        setMessage(`✅ Connected as ${result.username}`);
-        await fetchAccounts();
-      } else {
-        window.location.href = url;
+      if (platform === 'tiktok') {
+        const { url, mock } = await getTikTokOAuthUrl();
+        if (mock) {
+          const result = await connectTikTokMock();
+          setMessage(`✅ Connected as ${result.username}`);
+          await fetchAccounts();
+        } else {
+          window.location.href = url;
+        }
+      } else if (platform === 'instagram') {
+        const { url, mock } = await getInstagramOAuthUrl();
+        if (mock) {
+          setMessage('❌ Instagram is not configured on the server.');
+        } else {
+          window.location.href = url;
+        }
       }
     } catch (err) {
       setMessage('❌ ' + (err.response?.data?.error || 'Connection failed'));

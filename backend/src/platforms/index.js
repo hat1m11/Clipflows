@@ -8,13 +8,13 @@
  */
 
 const tiktok = require('./tiktok');
-// const instagram = require('./instagram');  // Future
-// const twitter = require('./twitter');       // Future
-// const linkedin = require('./linkedin');     // Future
+const instagram = require('./instagram');
+// const twitter = require('./twitter');   // Future
+// const linkedin = require('./linkedin'); // Future
 
 const platforms = {
   tiktok,
-  // instagram,
+  instagram,
   // twitter,
   // linkedin,
 };

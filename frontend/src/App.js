@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage';
 import UploadPage from './pages/UploadPage';
 import AccountsPage from './pages/AccountsPage';
 import TikTokCallbackPage from './pages/TikTokCallbackPage';
+import InstagramCallbackPage from './pages/InstagramCallbackPage';
 import './styles.css';
 
 function PrivateRoute({ children }) {
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/upload" element={<PrivateRoute><UploadPage /></PrivateRoute>} />
           <Route path="/accounts" element={<PrivateRoute><AccountsPage /></PrivateRoute>} />
           <Route path="/oauth/tiktok/callback" element={<PrivateRoute><TikTokCallbackPage /></PrivateRoute>} />
+          <Route path="/oauth/instagram/callback" element={<PrivateRoute><InstagramCallbackPage /></PrivateRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

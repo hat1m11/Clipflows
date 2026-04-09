@@ -7,7 +7,7 @@ import { uploadVideo, createPost } from '../services/api';
 
 const PLATFORMS = [
   { id: 'tiktok', name: 'TikTok', icon: '🎵', available: true },
-  { id: 'instagram', name: 'Instagram', icon: '📸', available: false },
+  { id: 'instagram', name: 'Instagram', icon: '📸', available: true },
   { id: 'twitter', name: 'X / Twitter', icon: '🐦', available: false },
   { id: 'linkedin', name: 'LinkedIn', icon: '💼', available: false },
 ];
