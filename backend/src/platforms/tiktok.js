@@ -161,13 +161,16 @@ async function post(videoPath, caption, credentials) {
  * Exchange OAuth code for tokens
  */
 async function exchangeCodeForTokens(code, redirectUri, codeVerifier) {
-  const response = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', {
+  const params = new URLSearchParams({
     client_key: process.env.TIKTOK_CLIENT_KEY,
     client_secret: process.env.TIKTOK_CLIENT_SECRET,
     code,
     grant_type: 'authorization_code',
     redirect_uri: redirectUri,
     code_verifier: codeVerifier,
+  });
+  const response = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', params.toString(), {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   });
   console.log('[TikTok] token exchange response:', JSON.stringify(response.data));
   const data = response.data;
