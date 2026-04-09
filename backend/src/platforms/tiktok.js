@@ -148,7 +148,8 @@ async function post(videoPath, caption, credentials) {
       error: null,
     };
   } catch (err) {
-    console.error('[TikTok] Post failed:', err.message);
+    const body = err.response?.data;
+    console.error('[TikTok] Post failed:', err.message, body ? JSON.stringify(body) : '');
     return {
       success: false,
       externalPostId: null,
