@@ -3,7 +3,7 @@ require('dotenv').config();
 const { Worker } = require('bullmq');
 const { query } = require('../db');
 const { getPlatform } = require('../platforms');
-const { redisConnection, POST_QUEUE_NAME } = require('../queue');
+const { createRedisConnection, POST_QUEUE_NAME } = require('../queue');
 const fs = require('fs');
 const path = require('path');
 
@@ -12,6 +12,7 @@ console.log('🔧 Post worker starting...');
 const worker = new Worker(
   POST_QUEUE_NAME,
   async (job) => {
+    console.log(`[Worker] Job received:`, job.id);
     const { postTargetId, postId, platform, videoPath, caption, userId } = job.data;
 
     console.log(`[Worker] Processing job ${job.id} - Platform: ${platform}, Target: ${postTargetId}`);
@@ -59,8 +60,8 @@ const worker = new Worker(
     }
   },
   {
-    connection: redisConnection,
-    concurrency: 3, // Process up to 3 jobs at once
+    connection: createRedisConnection(),
+    concurrency: 3,
   }
 );
 
