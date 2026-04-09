@@ -18,7 +18,18 @@ const PORT = process.env.PORT || 4000;
 // Middleware
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    const allowed = [
+      process.env.FRONTEND_URL,
+      'http://localhost:3000',
+    ].filter(Boolean);
+    // Allow requests with no origin (mobile apps, curl) or matching origins
+    if (!origin || allowed.some(o => origin === o || origin.endsWith('.netlify.app'))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(morgan('dev'));
