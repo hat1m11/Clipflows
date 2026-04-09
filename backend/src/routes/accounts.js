@@ -91,7 +91,7 @@ router.post('/tiktok/callback', async (req, res) => {
   const rawToken = await tiktok.exchangeCodeForTokens(code, redirectUri, codeVerifier);
   // TikTok v2 wraps token data inside a `data` field; fall back to top-level for safety
   const tokenData = rawToken.data || rawToken;
-  console.log('[TikTok] tokenData keys:', Object.keys(tokenData));
+  console.log('[TikTok] raw token response:', JSON.stringify(rawToken));
 
   const profile = await tiktok.getUserProfile(tokenData.access_token);
 
@@ -110,7 +110,7 @@ router.post('/tiktok/callback', async (req, res) => {
       profile.display_name,
       tokenData.access_token,
       tokenData.refresh_token,
-      new Date(Date.now() + tokenData.expires_in * 1000),
+      new Date(Date.now() + (tokenData.expires_in || 86400) * 1000),
     ]
   );
 
