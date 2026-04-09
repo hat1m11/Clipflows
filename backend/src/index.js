@@ -12,6 +12,9 @@ const authRoutes = require('./routes/auth');
 const accountsRoutes = require('./routes/accounts');
 const postsRoutes = require('./routes/posts');
 
+// Start the queue worker in the same process
+require('./workers/postWorker');
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 
