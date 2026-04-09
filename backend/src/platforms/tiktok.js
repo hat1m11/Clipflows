@@ -169,7 +169,13 @@ async function exchangeCodeForTokens(code, redirectUri, codeVerifier) {
     redirect_uri: redirectUri,
     code_verifier: codeVerifier,
   });
-  return response.data;
+  console.log('[TikTok] token exchange response:', JSON.stringify(response.data));
+  const data = response.data;
+  if (data.error && data.error !== 'ok') {
+    throw new Error(`TikTok token exchange failed: ${data.error} - ${data.error_description || ''}`);
+  }
+  // Unwrap nested data if present
+  return data.data || data;
 }
 
 /**

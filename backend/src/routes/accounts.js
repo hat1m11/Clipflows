@@ -88,10 +88,7 @@ router.post('/tiktok/callback', async (req, res) => {
 
   const tiktok = getPlatform('tiktok');
   const redirectUri = `${process.env.FRONTEND_URL}/oauth/tiktok/callback`;
-  const rawToken = await tiktok.exchangeCodeForTokens(code, redirectUri, codeVerifier);
-  // TikTok v2 wraps token data inside a `data` field; fall back to top-level for safety
-  const tokenData = rawToken.data || rawToken;
-  console.log('[TikTok] raw token response:', JSON.stringify(rawToken));
+  const tokenData = await tiktok.exchangeCodeForTokens(code, redirectUri, codeVerifier);
 
   const profile = await tiktok.getUserProfile(tokenData.access_token);
 
