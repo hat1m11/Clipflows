@@ -12,10 +12,13 @@ console.log('🔧 Post worker starting...');
 const worker = new Worker(
   POST_QUEUE_NAME,
   async (job) => {
-    console.log(`[Worker] Job received:`, job.id);
     const { postTargetId, postId, platform, videoPath, caption, userId } = job.data;
 
     console.log(`[Worker] Processing job ${job.id} - Platform: ${platform}, Target: ${postTargetId}`);
+
+    if (!fs.existsSync(videoPath)) {
+      throw new Error(`Video file not found (was the server redeployed?). Please re-upload the video.`);
+    }
 
     // Update status to processing
     await query(
