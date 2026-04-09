@@ -66,4 +66,4 @@ async function migrate() {
   }
 }
 
-migrate().catch(process.exit);
+migrate().catch((err) => { console.error(err); process.exit(1); });
