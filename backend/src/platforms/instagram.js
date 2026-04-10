@@ -19,9 +19,8 @@ async function exchangeCodeForTokens(code, redirectUri) {
     redirect_uri: redirectUri,
     grant_type: 'authorization_code',
   });
-  // New Instagram Login API uses graph.instagram.com for token exchange
   const shortRes = await axios.post(
-    `${GRAPH_BASE}/oauth/access_token`,
+    `${AUTH_BASE}/oauth/access_token`,
     params.toString(),
     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   );
