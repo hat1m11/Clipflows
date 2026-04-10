@@ -11,19 +11,18 @@ const GRAPH_BASE = 'https://graph.instagram.com';
  */
 async function exchangeCodeForTokens(code, redirectUri) {
   // Step 1: short-lived token
-  console.log('[Instagram] exchangeCodeForTokens - redirect_uri:', redirectUri, 'code length:', code?.length, 'code preview:', code?.substring(0, 30), 'app_id:', process.env.INSTAGRAM_APP_ID);
-  const params = new URLSearchParams({
-    client_id: process.env.INSTAGRAM_APP_ID,
-    client_secret: process.env.INSTAGRAM_APP_SECRET,
-    code,
-    redirect_uri: redirectUri,
-    grant_type: 'authorization_code',
-  });
-  console.log('[Instagram] token exchange body:', params.toString().replace(process.env.INSTAGRAM_APP_SECRET, '***'));
+  console.log('[Instagram] exchangeCodeForTokens - redirect_uri:', redirectUri, 'code length:', code?.length, 'app_id:', process.env.INSTAGRAM_APP_ID);
+  const FormData = require('form-data');
+  const form = new FormData();
+  form.append('client_id', process.env.INSTAGRAM_APP_ID);
+  form.append('client_secret', process.env.INSTAGRAM_APP_SECRET);
+  form.append('code', code);
+  form.append('redirect_uri', redirectUri);
+  form.append('grant_type', 'authorization_code');
   const shortRes = await axios.post(
     `${AUTH_BASE}/oauth/access_token`,
-    params.toString(),
-    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    form,
+    { headers: form.getHeaders() }
   );
   console.log('[Instagram] short-lived token:', JSON.stringify(shortRes.data));
 
