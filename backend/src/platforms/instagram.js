@@ -11,7 +11,7 @@ const GRAPH_BASE = 'https://graph.instagram.com';
  */
 async function exchangeCodeForTokens(code, redirectUri) {
   // Step 1: short-lived token
-  console.log('[Instagram] exchangeCodeForTokens - redirect_uri:', redirectUri, 'code length:', code?.length, 'app_id:', process.env.INSTAGRAM_APP_ID);
+  console.log('[Instagram] exchangeCodeForTokens - redirect_uri:', redirectUri, 'code length:', code?.length, 'code preview:', code?.substring(0, 30), 'app_id:', process.env.INSTAGRAM_APP_ID);
   const params = new URLSearchParams({
     client_id: process.env.INSTAGRAM_APP_ID,
     client_secret: process.env.INSTAGRAM_APP_SECRET,
