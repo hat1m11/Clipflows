@@ -28,15 +28,20 @@ async function exchangeCodeForTokens(code, redirectUri) {
   console.log('[Instagram] short-lived token:', JSON.stringify(shortRes.data));
 
   // Step 2: exchange for long-lived token (60 days)
-  const longRes = await axios.get(`${GRAPH_BASE}/access_token`, {
-    params: {
-      grant_type: 'ig_exchange_token',
-      client_secret: process.env.INSTAGRAM_APP_SECRET,
-      access_token: shortRes.data.access_token,
-    },
-  });
-  console.log('[Instagram] long-lived token:', JSON.stringify(longRes.data));
-  return longRes.data; // { access_token, token_type, expires_in }
+  try {
+    const longRes = await axios.get(`${GRAPH_BASE}/access_token`, {
+      params: {
+        grant_type: 'ig_exchange_token',
+        client_secret: process.env.INSTAGRAM_APP_SECRET,
+        access_token: shortRes.data.access_token,
+      },
+    });
+    console.log('[Instagram] long-lived token:', JSON.stringify(longRes.data));
+    return longRes.data;
+  } catch (err) {
+    console.warn('[Instagram] Long-lived token exchange failed, using short-lived:', err.response?.data || err.message);
+    return { access_token: shortRes.data.access_token, expires_in: 3600 };
+  }
 }
 
 /**
