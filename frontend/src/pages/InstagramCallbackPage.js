@@ -7,8 +7,10 @@ export default function InstagramCallbackPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    console.log('[Instagram CB] full URL:', window.location.href);
     const params = new URLSearchParams(window.location.search);
     const code = (params.get('code') || '').replace(/#.*$/, '');
+    console.log('[Instagram CB] code length:', code.length, 'code end:', code.slice(-10));
     const errorParam = params.get('error');
 
     if (errorParam) {

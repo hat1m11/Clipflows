@@ -19,6 +19,7 @@ async function exchangeCodeForTokens(code, redirectUri) {
     redirect_uri: redirectUri,
     grant_type: 'authorization_code',
   });
+  console.log('[Instagram] token exchange body:', params.toString().replace(process.env.INSTAGRAM_APP_SECRET, '***'));
   const shortRes = await axios.post(
     `${AUTH_BASE}/oauth/access_token`,
     params.toString(),
