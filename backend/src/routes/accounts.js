@@ -121,7 +121,7 @@ router.get('/instagram/oauth-url', async (req, res) => {
   }
   const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
   const redirectUri = `${frontendUrl}/oauth/instagram/callback`;
-  const state = Buffer.from(JSON.stringify({ userId: req.user.id })).toString('base64');
+  const state = Buffer.from(JSON.stringify({ userId: req.user.id })).toString('base64url');
   const scopes = ['instagram_business_basic', 'instagram_business_manage_messages', 'instagram_business_manage_comments', 'instagram_business_content_publish'].join(',');
   const url = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&response_type=code&state=${state}`;
   res.json({ url });
@@ -131,7 +131,7 @@ router.get('/instagram/oauth-url', async (req, res) => {
 router.post('/instagram/callback', async (req, res) => {
   const { code, state } = req.body;
   try {
-    JSON.parse(Buffer.from(state, 'base64').toString());
+    JSON.parse(Buffer.from(state, 'base64url').toString());
   } catch {
     return res.status(400).json({ error: 'Invalid state parameter' });
   }
