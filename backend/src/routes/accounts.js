@@ -119,7 +119,8 @@ router.get('/instagram/oauth-url', async (req, res) => {
   if (!process.env.INSTAGRAM_APP_ID) {
     return res.json({ url: null, mock: true, message: 'Instagram not configured.' });
   }
-  const redirectUri = `${process.env.FRONTEND_URL}/oauth/instagram/callback`;
+  const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+  const redirectUri = `${frontendUrl}/oauth/instagram/callback`;
   const state = Buffer.from(JSON.stringify({ userId: req.user.id })).toString('base64');
   const scopes = ['instagram_business_basic', 'instagram_business_content_publish'].join(',');
   const url = `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&response_type=code&state=${state}`;
@@ -137,7 +138,8 @@ router.post('/instagram/callback', async (req, res) => {
 
   try {
     const instagram = getPlatform('instagram');
-    const redirectUri = `${process.env.FRONTEND_URL}/oauth/instagram/callback`;
+    const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+    const redirectUri = `${frontendUrl}/oauth/instagram/callback`;
     const tokenData = await instagram.exchangeCodeForTokens(code, redirectUri);
     const profile = await instagram.getUserProfile(tokenData.access_token);
 

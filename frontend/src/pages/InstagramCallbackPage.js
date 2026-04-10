@@ -8,7 +8,7 @@ export default function InstagramCallbackPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
+    const code = (params.get('code') || '').replace(/#.*$/, '');
     const errorParam = params.get('error');
 
     if (errorParam) {
