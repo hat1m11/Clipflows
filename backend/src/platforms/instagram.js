@@ -3,7 +3,8 @@ const axios = require('axios');
 const path = require('path');
 const { query } = require('../db');
 
-const GRAPH_API = 'https://graph.facebook.com/v21.0';
+const AUTH_BASE = 'https://api.instagram.com';
+const GRAPH_BASE = 'https://graph.instagram.com';
 
 /**
  * Exchange OAuth code for a long-lived access token
@@ -18,57 +19,39 @@ async function exchangeCodeForTokens(code, redirectUri) {
     grant_type: 'authorization_code',
   });
   const shortRes = await axios.post(
-    `${GRAPH_API}/oauth/access_token`,
+    `${AUTH_BASE}/oauth/access_token`,
     params.toString(),
     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   );
-  console.log('[Instagram] short-lived token response:', JSON.stringify(shortRes.data));
+  console.log('[Instagram] short-lived token:', JSON.stringify(shortRes.data));
 
   // Step 2: exchange for long-lived token (60 days)
-  const longRes = await axios.get(`${GRAPH_API}/oauth/access_token`, {
+  const longRes = await axios.get(`${GRAPH_BASE}/access_token`, {
     params: {
-      grant_type: 'fb_exchange_token',
-      client_id: process.env.INSTAGRAM_APP_ID,
+      grant_type: 'ig_exchange_token',
       client_secret: process.env.INSTAGRAM_APP_SECRET,
-      fb_exchange_token: shortRes.data.access_token,
+      access_token: shortRes.data.access_token,
     },
   });
-  console.log('[Instagram] long-lived token response:', JSON.stringify(longRes.data));
+  console.log('[Instagram] long-lived token:', JSON.stringify(longRes.data));
   return longRes.data; // { access_token, token_type, expires_in }
 }
 
 /**
- * Get Instagram Business Account ID and username from a Meta user token
+ * Get Instagram user profile
  */
 async function getUserProfile(accessToken) {
   try {
-    // Get Facebook pages the user manages
-    const pagesRes = await axios.get(`${GRAPH_API}/me/accounts`, {
-      params: { access_token: accessToken },
+    const res = await axios.get(`${GRAPH_BASE}/me`, {
+      params: {
+        fields: 'user_id,username',
+        access_token: accessToken,
+      },
     });
-    const pages = pagesRes.data.data || [];
-
-    for (const page of pages) {
-      const pageRes = await axios.get(`${GRAPH_API}/${page.id}`, {
-        params: {
-          fields: 'instagram_business_account',
-          access_token: page.access_token || accessToken,
-        },
-      });
-      const igAccount = pageRes.data.instagram_business_account;
-      if (igAccount) {
-        const profileRes = await axios.get(`${GRAPH_API}/${igAccount.id}`, {
-          params: { fields: 'username', access_token: accessToken },
-        });
-        return {
-          ig_user_id: igAccount.id,
-          username: `@${profileRes.data.username}`,
-        };
-      }
-    }
-
-    console.warn('[Instagram] No Instagram Business Account found on any page');
-    return { ig_user_id: null, username: '@instagram_user' };
+    return {
+      ig_user_id: res.data.user_id || res.data.id,
+      username: `@${res.data.username}`,
+    };
   } catch (err) {
     console.warn('[Instagram] Could not fetch profile:', err.message, err.response?.data);
     return { ig_user_id: null, username: '@instagram_user' };
@@ -76,10 +59,10 @@ async function getUserProfile(accessToken) {
 }
 
 /**
- * Refresh a long-lived token before it expires
+ * Refresh long-lived token before expiry
  */
 async function refreshAccessToken(socialAccountId, accessToken) {
-  const res = await axios.get(`${GRAPH_API}/oauth/access_token`, {
+  const res = await axios.get(`${GRAPH_BASE}/refresh_access_token`, {
     params: {
       grant_type: 'ig_refresh_token',
       access_token: accessToken,
@@ -99,9 +82,7 @@ async function refreshAccessToken(socialAccountId, accessToken) {
  */
 async function post(videoPath, caption, credentials) {
   try {
-    const accessToken = credentials.access_token;
     const igUserId = credentials.platform_user_id;
-
     if (!igUserId) {
       throw new Error('No Instagram user ID. Reconnect your Instagram account.');
     }
@@ -112,12 +93,11 @@ async function post(videoPath, caption, credentials) {
     }
 
     // Refresh token if expiring within 7 days
+    let token = credentials.access_token;
     const expiresAt = new Date(credentials.expires_at);
-    const sevenDays = 7 * 24 * 60 * 60 * 1000;
-    let token = accessToken;
-    if (expiresAt - Date.now() < sevenDays) {
+    if (expiresAt - Date.now() < 7 * 24 * 60 * 60 * 1000) {
       console.log('[Instagram] Token expiring soon, refreshing...');
-      token = await refreshAccessToken(credentials.id, accessToken);
+      token = await refreshAccessToken(credentials.id, token);
     }
 
     const filename = path.basename(videoPath);
@@ -125,23 +105,27 @@ async function post(videoPath, caption, credentials) {
     console.log('[Instagram] Posting Reel from URL:', videoUrl);
 
     // Step 1: Create Reels container
-    const containerRes = await axios.post(`${GRAPH_API}/${igUserId}/media`, null, {
-      params: {
-        media_type: 'REELS',
-        video_url: videoUrl,
-        caption,
-        share_to_feed: true,
-        access_token: token,
-      },
-    });
+    const containerRes = await axios.post(
+      `${GRAPH_BASE}/${igUserId}/media`,
+      null,
+      {
+        params: {
+          media_type: 'REELS',
+          video_url: videoUrl,
+          caption,
+          share_to_feed: true,
+          access_token: token,
+        },
+      }
+    );
     const creationId = containerRes.data.id;
     console.log('[Instagram] Container created:', creationId);
 
-    // Step 2: Poll until processing is done (up to 5 mins)
+    // Step 2: Poll until processing done (up to 5 mins)
     let statusCode = 'IN_PROGRESS';
     for (let i = 0; i < 60; i++) {
       await new Promise((r) => setTimeout(r, 5000));
-      const statusRes = await axios.get(`${GRAPH_API}/${creationId}`, {
+      const statusRes = await axios.get(`${GRAPH_BASE}/${creationId}`, {
         params: { fields: 'status_code', access_token: token },
       });
       statusCode = statusRes.data.status_code;
@@ -154,23 +138,17 @@ async function post(videoPath, caption, credentials) {
     }
 
     // Step 3: Publish
-    const publishRes = await axios.post(`${GRAPH_API}/${igUserId}/media_publish`, null, {
-      params: { creation_id: creationId, access_token: token },
-    });
+    const publishRes = await axios.post(
+      `${GRAPH_BASE}/${igUserId}/media_publish`,
+      null,
+      { params: { creation_id: creationId, access_token: token } }
+    );
 
-    return {
-      success: true,
-      externalPostId: publishRes.data.id,
-      error: null,
-    };
+    return { success: true, externalPostId: publishRes.data.id, error: null };
   } catch (err) {
     const body = err.response?.data;
     console.error('[Instagram] Post failed:', err.message, body ? JSON.stringify(body) : '');
-    return {
-      success: false,
-      externalPostId: null,
-      error: err.message,
-    };
+    return { success: false, externalPostId: null, error: err.message };
   }
 }
 
