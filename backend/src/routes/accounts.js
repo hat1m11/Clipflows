@@ -123,6 +123,7 @@ router.get('/instagram/oauth-url', async (req, res) => {
   const redirectUri = `${frontendUrl}/oauth/instagram/callback`;
   const state = Buffer.from(JSON.stringify({ userId: req.user.id })).toString('base64url');
   const scopes = ['instagram_business_basic', 'instagram_business_manage_messages', 'instagram_business_manage_comments', 'instagram_business_content_publish'].join(',');
+  console.log('[Instagram] OAuth URL redirect_uri:', redirectUri);
   const url = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&response_type=code&state=${state}`;
   res.json({ url });
 });

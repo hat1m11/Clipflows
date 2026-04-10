@@ -11,19 +11,14 @@ const GRAPH_BASE = 'https://graph.instagram.com';
  */
 async function exchangeCodeForTokens(code, redirectUri) {
   // Step 1: short-lived token
-  console.log('[Instagram] exchangeCodeForTokens - redirect_uri:', redirectUri, 'code length:', code?.length, 'app_id:', process.env.INSTAGRAM_APP_ID);
-  const FormData = require('form-data');
-  const form = new FormData();
-  form.append('client_id', process.env.INSTAGRAM_APP_ID);
-  form.append('client_secret', process.env.INSTAGRAM_APP_SECRET);
-  form.append('code', code);
-  form.append('redirect_uri', redirectUri);
-  form.append('grant_type', 'authorization_code');
-  const shortRes = await axios.post(
-    `${AUTH_BASE}/oauth/access_token`,
-    form,
-    { headers: form.getHeaders() }
-  );
+  console.log('[Instagram] exchangeCodeForTokens - redirect_uri:', redirectUri, 'code:', code);
+  const shortRes = await axios.post(`${AUTH_BASE}/oauth/access_token`, {
+    client_id: process.env.INSTAGRAM_APP_ID,
+    client_secret: process.env.INSTAGRAM_APP_SECRET,
+    code,
+    redirect_uri: redirectUri,
+    grant_type: 'authorization_code',
+  });
   console.log('[Instagram] short-lived token:', JSON.stringify(shortRes.data));
 
   // Step 2: exchange for long-lived token (60 days)
