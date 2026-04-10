@@ -135,25 +135,31 @@ router.post('/instagram/callback', async (req, res) => {
     return res.status(400).json({ error: 'Invalid state parameter' });
   }
 
-  const instagram = getPlatform('instagram');
-  const redirectUri = `${process.env.FRONTEND_URL}/oauth/instagram/callback`;
-  const tokenData = await instagram.exchangeCodeForTokens(code, redirectUri);
-  const profile = await instagram.getUserProfile(tokenData.access_token);
+  try {
+    const instagram = getPlatform('instagram');
+    const redirectUri = `${process.env.FRONTEND_URL}/oauth/instagram/callback`;
+    const tokenData = await instagram.exchangeCodeForTokens(code, redirectUri);
+    const profile = await instagram.getUserProfile(tokenData.access_token);
 
-  const expiresAt = new Date(Date.now() + (tokenData.expires_in || 60 * 24 * 60 * 60) * 1000);
+    const expiresAt = new Date(Date.now() + (tokenData.expires_in || 60 * 24 * 60 * 60) * 1000);
 
-  await query(
-    `INSERT INTO social_accounts (user_id, platform, platform_user_id, platform_username, access_token, expires_at)
-     VALUES ($1, 'instagram', $2, $3, $4, $5)
-     ON CONFLICT (user_id, platform) DO UPDATE SET
-       platform_user_id = EXCLUDED.platform_user_id,
-       platform_username = EXCLUDED.platform_username,
-       access_token = EXCLUDED.access_token,
-       expires_at = EXCLUDED.expires_at`,
-    [req.user.id, profile.ig_user_id, profile.username, tokenData.access_token, expiresAt]
-  );
+    await query(
+      `INSERT INTO social_accounts (user_id, platform, platform_user_id, platform_username, access_token, expires_at)
+       VALUES ($1, 'instagram', $2, $3, $4, $5)
+       ON CONFLICT (user_id, platform) DO UPDATE SET
+         platform_user_id = EXCLUDED.platform_user_id,
+         platform_username = EXCLUDED.platform_username,
+         access_token = EXCLUDED.access_token,
+         expires_at = EXCLUDED.expires_at`,
+      [req.user.id, profile.ig_user_id, profile.username, tokenData.access_token, expiresAt]
+    );
 
-  res.json({ success: true, platform: 'instagram', username: profile.username });
+    res.json({ success: true, platform: 'instagram', username: profile.username });
+  } catch (err) {
+    const body = err.response?.data;
+    console.error('[Instagram] Callback failed:', err.message, body ? JSON.stringify(body) : '');
+    res.status(500).json({ error: err.message, detail: body });
+  }
 });
 
 // DELETE /accounts/:platform - disconnect account
